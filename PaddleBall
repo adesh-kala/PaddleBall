@@ -1,0 +1,326 @@
+//our favourite timepass game is back!
+//copy paste whole thing into bluej new file, compile and run applet
+/*This version includes two settings
+ * speed gives game speed
+ * difficulty(for present) give paddle size
+ */
+import java.applet.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+public class PaddleBall_4_0 extends Applet implements ActionListener,ItemListener,
+                                    MouseListener,MouseMotionListener,Runnable
+{
+    Point p;
+    Thread t;
+    String nm,score;
+    int padsize=60,x=500,y=100,prevx=-1,prevy=-1,incx=1,incy=1,goalct=0,live=3,time=10,min,sec;
+    int obx,oby,obsx,obsy;
+    long begtime,curtime;
+    double timerem=60.0;
+    Image buffer,buffer2;
+    Graphics bufferg,g2;
+    boolean xcont=false,ycont=true,hitPad=false,end=false;
+    boolean drop=false,dropping=false;
+    Button reset=new Button("Reset");
+    Choice speed=new Choice();
+    Choice diff=new Choice();
+    Calendar c;
+    String tm="";
+    public void init()
+    {
+        c=Calendar.getInstance();
+        begtime=c.getTimeInMillis()/1000;
+        speed.addItem("Slow");
+        speed.addItem("Medium");
+        speed.addItem("Fast");
+        speed.select(1);
+        diff.addItem("Easy");
+        diff.addItem("Normal");
+        diff.addItem("Hard");
+        diff.select(1);
+        add(diff);
+        add(speed);
+        add(reset);
+        addMouseListener(this);
+        addMouseMotionListener(this);
+        diff.addItemListener(this);
+        speed.addItemListener(this);
+        reset.addActionListener(this);
+        Dimension d=getSize();
+        buffer=createImage(d.width,d.height);
+        t=new Thread(this);
+        t.start();
+    }
+    public void run()
+    {
+        try
+        {
+            while(true)
+            {
+                repaint();
+                Thread.sleep(time);
+            }
+        }
+        catch(Exception e){}
+    }
+    public void actionPerformed(ActionEvent ae)
+    {
+        if(ae.getSource()==reset)
+        {
+            x=300;
+            y=100;
+            prevx=-1;
+            prevy=-1;
+            incx=1;
+            incy=1;
+            goalct=0;
+            live=3;
+            c=Calendar.getInstance();
+            begtime=c.getTimeInMillis()/1000;
+            if(end)
+            {
+                addMouseListener(this);
+                addMouseMotionListener(this);
+            }
+            try
+            {
+                t.resume();
+            }
+            catch(Exception e){}
+            end=false;
+            drop=false;
+            dropping=false;
+            repaint();
+        }
+    }
+    public void itemStateChanged(ItemEvent ie)
+    {
+        Choice c=(Choice)ie.getItemSelectable();
+        if(c.getSelectedItem().equals("Slow"))
+        {
+            time=20;
+        }
+        if(c.getSelectedItem().equals("Medium"))
+        {
+            time=10;
+        }
+        if(c.getSelectedItem().equals("Fast"))
+        {
+            time=7;
+        }
+        if(c.getSelectedItem().equals("Easy"))
+        {
+            padsize=100;
+        }
+        if(c.getSelectedItem().equals("Normal"))
+        {
+            padsize=60;
+        }
+        if(c.getSelectedItem().equals("Hard"))
+        {
+            padsize=40;
+        }
+        repaint();
+    }
+    public void mouseClicked(MouseEvent me)
+    {}
+    public void mouseEntered(MouseEvent me)
+    {}
+    public void mouseExited(MouseEvent me)
+    {}
+    public void mousePressed(MouseEvent me)
+    {}
+    public void mouseReleased(MouseEvent me)
+    {}
+    public void mouseDragged(MouseEvent me)
+    {}
+    public void mouseMoved(MouseEvent me)
+    {
+        p=me.getPoint();
+        Graphics g=getGraphics();
+        Dimension d=getSize();
+        if(g2==null)
+            g2=buffer2.getGraphics();
+        g2.setColor(Color.white);
+        g2.fillRect(0,0,d.width,d.height);
+        //paddle
+        g2.setColor(Color.black);
+        g2.fillRect(d.width-50,p.y-padsize/2,10,padsize);
+        //goal ct
+        g2.drawString("Goals: "+goalct,7,d.height-140);
+        g2.drawString("Lives: "+live,7,d.height-120);
+        //outside line
+        g2.setColor(Color.yellow);
+        g2.fillRect(d.width-20,0,5,d.height);
+        //goalposts
+        g2.setColor(new Color(161,97,0));
+        g2.fillRect(0,d.height/2-50,30,5);
+        g2.fillRect(0,d.height/2+50,30,5);
+        g2.drawString("GOAL",0,d.height/2);
+        //rubber
+        g2.setColor(Color.magenta);
+        g2.fillRect(0,0,6,d.height/2-50);
+        g2.fillRect(0,d.height/2+55,6,d.height);
+        g2.drawString("Rubber zone",7,d.height-80);
+        g.drawImage(buffer2,0,0,this);
+    }
+    public void paint(Graphics g)
+    {
+        c=Calendar.getInstance();
+        curtime=c.getTimeInMillis()/1000;
+        timerem=85-(curtime-begtime);
+        min=(int)(timerem/60);
+        sec=(int)(timerem%60);
+        tm=tm+"0"+min+":";
+        if((double)(sec/10)<1.0)
+            tm=tm+"0";
+        tm=tm+sec;
+ 
+        if(timerem%10==0)
+            drop=true;
+ 
+        Dimension d=getSize();
+        if(bufferg==null)
+            bufferg=buffer.getGraphics();
+        bufferg.setColor(Color.white);
+        bufferg.fillRect(0,0,d.width,d.height);
+        //paddle
+        bufferg.setColor(Color.black);
+        bufferg.fillRect(d.width-50,p.y-padsize/2,10,padsize);
+        //goal ct
+        bufferg.drawString("Goals: "+goalct,7,d.height-140);
+        bufferg.drawString("Lives: "+live,7,d.height-120);
+        //time
+        if(timerem>10)
+            bufferg.setColor(new Color(74,194,0));//darkish green
+        else
+            bufferg.setColor(Color.red);
+        bufferg.drawString("Time: "+tm,7,d.height-100);
+        //ball
+        bufferg.setColor(Color.red);
+        bufferg.fillOval(x,y,20,20);
+        //goalposts
+        bufferg.setColor(new Color(161,97,0));//brown
+        bufferg.fillRect(0,d.height/2-50,30,5);
+        bufferg.fillRect(0,d.height/2+50,30,5);
+        bufferg.drawString("GOAL",0,d.height/2);
+        //outside line
+        bufferg.setColor(Color.yellow);
+        bufferg.fillRect(d.width-20,0,5,d.height);
+        //rubber
+        bufferg.setColor(Color.magenta);
+        bufferg.fillRect(0,0,6,d.height/2-50);
+        bufferg.fillRect(0,d.height/2+55,6,d.height);
+        bufferg.drawString("Rubber zone",7,d.height-80);
+        //obstacle
+        if(drop)
+        {
+            obsx=(int)(30+(30*Math.random()));
+            obsy=10;
+            obx=(int)(Math.random()*(d.width-52-obsx));//-52 as 50 paddle location
+            oby=-obsy;//so from top
+            dropping=true;
+            drop=false;
+        }
+        if(dropping)
+        {
+            bufferg.setColor(Color.cyan);
+            bufferg.fillRect(obx,oby,obsx,obsy);
+            oby++;
+        }
+        g.drawImage(buffer,0,0,this);
+        if(xcont==true)
+            x+=incx;
+        else
+            x-=incx;
+        if(ycont==true)
+            y+=incy;
+        else
+            y-=incy;
+        if(x>=d.width||timerem<=0)//go out
+        {
+            if(live==0||timerem<=0)
+            {
+                g.setFont(new Font("arial",Font.BOLD,40));
+                String s=goalct!=1?"YOU SCORED "+goalct+" GOALS":"YOU SCORED "+goalct+" GOAL";
+                String s2="THANKS FOR PLAYING!";
+                g.drawString(s,20,100);
+                g.drawString(s2,20,150);
+                g.setFont(new Font("times new roman",Font.ITALIC,10));
+                g.drawString("PaddleBall\u00A9",15,d.height-30);
+                t.suspend();
+                removeMouseListener(this);
+                removeMouseMotionListener(this);
+                end=true;
+            }
+            else
+            {
+                live--;
+                try
+                {
+                    t.sleep(2000);
+                }
+                catch(Exception e){}
+                x=200;
+                y=250;
+                ycont=false;
+                xcont=false;
+                repaint();
+            }
+        }
+        if(y+20>=d.height||((y>=oby+obsy||y+20>=oby+obsy) && y<=oby && (x<=obx+obsx||x+20<=obx+obsx) && x>=obx))//hit bottom wall | obstacle from top
+            ycont=false;
+        if(x<=0)//hit left(rubber) wall
+        {
+            xcont=true;
+            if(y<=d.height/2+50&&y>=d.height/2-50)//if goal
+                goalct++;
+        }
+        if(y<=0 || ((y<=oby+obsy||y+20<=oby+obsy) && y>=oby && (x<=obx+obsx||x+20<=obx+obsx) && x>=obx))// wall | obstacle | post from bottom
+            ycont=true;
+        if(x<=0&&((y>=0&&y<=d.height/2-50)||(y<d.height&&y>=d.height/2+50))&&hitPad)//hit rubber,speed change
+        {
+            while(true)
+            {
+                incx=(int)(10*Math.random());
+                incy=(int)(10*Math.random());
+                if(incx==0||incy==0)
+                    continue;
+                else
+                    break;
+            }
+            hitPad=false;
+        }
+        if((x>=d.width-70&&x<=d.width-60)&&(y+10<=p.y+30&&y+10>=p.y-30))//hit paddle condition -70 taking ball thickness into account
+        {                                                            
+            if(prevy<y)
+            {
+                xcont=false;
+                ycont=true;
+            }
+            else if(prevy>y)
+            {
+                xcont=false;
+                ycont=false;
+            }
+            else{}
+            hitPad=true;
+        }
+        prevx=x;
+        prevy=y;
+        tm="";
+        if(oby>=d.height)
+        {
+            dropping=false;
+            obx=0;
+            oby=0;
+            obsx=0;
+            obsy=0;
+        }
+    }
+    public void destroy()
+    {
+        t.stop();
+    }
+}
